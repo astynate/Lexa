@@ -1,5 +1,5 @@
-from library.model.__model__ import *
-from library.data.vocabulary import ru
+from library.__model__ import *
+from library.vocabulary import ru
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 

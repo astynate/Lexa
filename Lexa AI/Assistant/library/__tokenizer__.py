@@ -3,7 +3,6 @@ import pickle
 from tensorflow.keras.preprocessing.text import Tokenizer
 
 def load_dataset(path: str) -> list:
-
     with open(path, 'r', encoding='utf-8') as data:
         dataset = data.read().lower()
 
@@ -13,11 +12,9 @@ class LexaTokenizer:
 
     def __init__(self, path: str, **kwargs) -> None:
 
-        self.path = path + 'lexa_tokenizer.pickle'
+        if os.path.exists(path):
 
-        if os.path.exists(self.path):
-
-            with open(self.path, 'rb') as handle:
+            with open(path, 'rb') as handle:
                 self.tokenizer = pickle.load(handle)
         else:
 
@@ -28,7 +25,7 @@ class LexaTokenizer:
                 self.tokenizer = Tokenizer()
                 self.tokenizer.fit_on_texts(dataset)
 
-                with open(self.path, 'wb') as handle:
+                with open(path, 'wb') as handle:
 
                     pickle.dump(self.tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
             
