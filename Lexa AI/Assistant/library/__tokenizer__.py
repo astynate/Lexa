@@ -1,6 +1,6 @@
 import os
 import pickle
-from tensorflow.keras.preprocessing.text import Tokenizer
+import tensorflow_datasets as tfds
 
 def load_dataset(path: str) -> list:
     with open(path, 'r', encoding='utf-8') as data:
@@ -22,8 +22,8 @@ class LexaTokenizer:
 
             if dataset is not None:
 
-                self.tokenizer = Tokenizer()
-                self.tokenizer.fit_on_texts(dataset)
+                self.tokenizer = tfds.deprecated.text.SubwordTextEncoder.build_from_corpus(
+                    (text for text in dataset), target_vocab_size=2**13)
 
                 with open(path, 'wb') as handle:
 
@@ -33,20 +33,34 @@ class LexaTokenizer:
                 raise ValueError("No existing tokenizer found and no dataset provided to train a new one.")
 
     def get_sequences(self, text: str) -> list:
-        return self.tokenizer.texts_to_sequences([text])[0]
+
+        sequences = self.tokenizer.encode(text)
+        
+        if len(sequences) > 50:
+            return sequences[:50]
+        elif len(sequences) < 50:
+            return sequences + [0] * (50 - len(sequences))
+        else:
+            return sequences
 
     def get_text(self, sequences: list) -> str:
-        return self.tokenizer.sequences_to_texts([sequences])[0]
+        return self.tokenizer.decode(sequences) 
+    
+    def get_dimension(self) -> int:
+        return self.tokenizer.vocab_size
 
 if __name__ == '__main__':
 
-    model_path: str = 'D:/Exider Company/Lexa/Lexa AI/Assistant/models/'
-    dataset = load_dataset('D:/Exider Company/Lexa/Lexa AI/Assistant/dataset/original/russian.txt')
+    model_path: str = 'D:/Exider Company/Lexa/Lexa AI/Assistant/models/lexa_tokenizer.pickle'
+    dataset = load_dataset('D:/Exider Company/Lexa/Lexa AI/Assistant/dataset/original/book_one.txt')
 
-    tokenizer = LexaTokenizer(model_path, dataset)
+    tokenizer = LexaTokenizer(model_path, dataset=dataset)
 
     test_token = tokenizer.get_sequences('привет как дела')
     original_text = tokenizer.get_text(test_token)
 
     print(test_token)
     print(original_text)
+
+    print("Количество токенов в токенизаторе: ", tokenizer.tokenizer.vocab_size)
+
