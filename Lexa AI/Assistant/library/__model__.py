@@ -9,35 +9,41 @@ from tensorflow.keras import mixed_precision
 
 mixed_precision.set_global_policy('mixed_float16')
 
-class PositionEncoding(layers.Layer):
-    def __init__(self, position, d_model):
-        super(PositionEncoding, self).__init__()
+class PositionEncoding(tf.keras.layers.Layer):
+    def __init__(self, position, d_model, **kwargs):
+        super(PositionEncoding, self).__init__(**kwargs)
+        self.position = position
+        self.d_model = d_model
         self.pos_encoding = self.positional_encoding(position, d_model)
 
     def get_angles(self, position, i, d_model):
         angles = 1 / tf.pow(10000, (2 * (i // 2)) / tf.cast(d_model, tf.float32))
-        return position * angles
+        return tf.cast(position, tf.float32) * angles
 
     def positional_encoding(self, position, d_model):
         angle_rads = self.get_angles(
-            position=tf.range(position, dtype=tf.float32)[:, tf.newaxis],
-            i=tf.range(d_model, dtype=tf.float32)[tf.newaxis, :],
-            d_model=d_model)
+            np.arange(position)[:, np.newaxis],
+            np.arange(d_model)[np.newaxis, :],
+            d_model
+        )
 
-        sines = tf.math.sin(angle_rads[:, 0::2])
-        cosines = tf.math.cos(angle_rads[:, 1::2])
+        # apply sin to even indices in the array; 2i
+        sines = np.sin(angle_rads[:, 0::2])
 
-        pos_encoding = tf.concat([sines, cosines], axis=-1)
-        pos_encoding = pos_encoding[tf.newaxis, ...]
-        return tf.cast(pos_encoding, tf.float32)
+        # apply cos to odd indices in the array; 2i+1
+        cosines = np.cos(angle_rads[:, 1::2])
+
+        pos_encoding = np.concatenate([sines, cosines], axis=-1)
+        pos_encoding = pos_encoding[np.newaxis, ...]
+
+        return tf.cast(pos_encoding, dtype=tf.float32)
 
     def call(self, inputs):
-        inputs = tf.cast(inputs, dtype=tf.float32)
-        return inputs + self.pos_encoding[:, :tf.shape(inputs)[1], :]
+        return inputs + tf.cast(self.pos_encoding[:, :tf.shape(inputs)[1], :], dtype=tf.float16)
 
-class TransformerBlock(layers.Layer):
-    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
-        super(TransformerBlock, self).__init__()
+class TransformerBlock(tf.keras.layers.Layer):
+    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1, **kwargs):
+        super(TransformerBlock, self).__init__(**kwargs)
         self.att = layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
         self.ffn = tf.keras.Sequential([
             layers.Dense(ff_dim, activation="relu"), 
@@ -48,12 +54,10 @@ class TransformerBlock(layers.Layer):
         self.dropout1 = layers.Dropout(rate)
         self.dropout2 = layers.Dropout(rate)
 
-    def call(self, inputs, training):
-        attn_output = self.att(inputs, inputs)
-        attn_output = self.dropout1(attn_output, training=training)
+    def call(self, inputs):
+        attn_output = self.att(inputs, inputs, inputs)
         out1 = self.layernorm1(inputs + attn_output)
         ffn_output = self.ffn(out1)
-        ffn_output = self.dropout2(ffn_output, training=training)
         return self.layernorm2(out1 + ffn_output)
 
 class Lexa:
@@ -97,4 +101,4 @@ class Lexa:
 
 if __name__ == '__main__':
 
-    lexa = Lexa(50, 'D:/Exider Company/Lexa/Lexa AI/Assistant' + '/models/lexa_tokenizer.pickle', 1, 25)
+    lexa = Lexa(50, 'D:/Exider Company/Lexa/Lexa AI/Assistant' + '/models/lexa_tokenizer.pickle', 1)

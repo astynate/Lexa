@@ -3,7 +3,7 @@ import pickle
 import tensorflow_datasets as tfds
 
 def load_dataset(path: str) -> list:
-    with open(path, 'r', encoding='utf-8') as data:
+    with open(path, encoding='utf-8') as data:
         dataset = data.read().lower()
 
     return dataset.split()
@@ -36,7 +36,6 @@ class LexaTokenizer:
         return self.tokenizer.encode(text)
 
     def get_sequences(self, text: str) -> list:
-
         sequences = self.tokenizer.encode(text)
         
         if len(sequences) > 50:
@@ -50,7 +49,8 @@ class LexaTokenizer:
         return self.tokenizer.decode(sequences) 
     
     def get_dimension(self) -> int:
-        return self.tokenizer.vocab_size
+        # return self.tokenizer.vocab_size
+        return 3500
 
 if __name__ == '__main__':
 
@@ -61,6 +61,11 @@ if __name__ == '__main__':
 
     test_token = tokenizer.get_sequences('привет как дела')
     original_text = tokenizer.get_text(test_token)
+
+    for token in range(tokenizer.get_dimension()):
+        print(tokenizer.get_text([token]))
+
+    print(len(dataset))
 
     print(test_token)
     print(original_text)
