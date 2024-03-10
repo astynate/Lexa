@@ -49,8 +49,8 @@ class LexaTokenizer:
         return self.tokenizer.decode(sequences) 
     
     def get_dimension(self) -> int:
-        # return self.tokenizer.vocab_size
-        return 3500
+        return self.tokenizer.vocab_size
+        # return 3500
 
 if __name__ == '__main__':
 
