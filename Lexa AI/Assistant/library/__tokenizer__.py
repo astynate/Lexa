@@ -32,6 +32,9 @@ class LexaTokenizer:
             else:
                 raise ValueError("No existing tokenizer found and no dataset provided to train a new one.")
 
+    def get_full_sequence(self, text: str) -> list:
+        return self.tokenizer.encode(text)
+
     def get_sequences(self, text: str) -> list:
 
         sequences = self.tokenizer.encode(text)
@@ -63,4 +66,3 @@ if __name__ == '__main__':
     print(original_text)
 
     print("Количество токенов в токенизаторе: ", tokenizer.tokenizer.vocab_size)
-
