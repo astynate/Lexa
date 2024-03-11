@@ -23,15 +23,15 @@ def train() -> None:
     print(train_data.shape)
     print(train_labels.shape)
 
-    for _ in range(5):
+    for _ in range(1):
 
-        lexa.model.fit(train_data, train_labels, batch_size=32, epochs=5)
+        lexa.model.fit(train_data, train_labels, batch_size=64, epochs=1)
         lexa.model.save(BASE_PATH + '/models/lexa.keras')
 
         context = lexa.tokenizer.get_text([np.random.randint(1, 30)])
         print(context)
 
-        for i in range(5):
+        for i in range(1):
             
             print(str(i) + ' |' + context + '|')
             generated_word = lexa(context)

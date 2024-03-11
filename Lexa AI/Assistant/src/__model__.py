@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
-from __tokenizer__ import LexaTokenizer
+from tokenizer import LexaTokenizer
 from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -27,10 +27,7 @@ class PositionEncoding(tf.keras.layers.Layer):
             d_model
         )
 
-        # apply sin to even indices in the array; 2i
         sines = np.sin(angle_rads[:, 0::2])
-
-        # apply cos to odd indices in the array; 2i+1
         cosines = np.cos(angle_rads[:, 1::2])
 
         pos_encoding = np.concatenate([sines, cosines], axis=-1)
@@ -76,7 +73,7 @@ class Lexa:
         else:
 
             inputs = tf.keras.Input(shape=(input_shape,))
-            embedding_layer = layers.Embedding(input_dim=self.tokenizer.tokenizer.vocab_size, output_dim=self.embed_dim)
+            embedding_layer = layers.Embedding(input_dim=self.tokenizer.get_dimension(), output_dim=self.embed_dim)
             x = embedding_layer(inputs)
             x = PositionEncoding(self.embed_dim, self.embed_dim)(x)
             x = TransformerBlock(self.embed_dim, heads, self.embed_dim)(x, training=True)

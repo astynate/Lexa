@@ -10,9 +10,9 @@ for i in range(5):
     print(str(i))
     print(context, end=' ')
 
-    for k in range(10):
+    for k in range(20):
         
         generated_word = lexa(context)
         context += generated_word
 
-        print(generated_word)
+    print(context)
