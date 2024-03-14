@@ -13,8 +13,8 @@ def train() -> None:
 
     print('Launching the training module...')
 
-    with tf.device('/GPU:0'):
-        lexa = Lexa(50, BASE_PATH + '/models/lexa_tokenizer.pickle', 2, path=BASE_PATH + '/models/lexa.keras')
+    # with tf.device('/GPU:0'):
+    lexa = Lexa(50, BASE_PATH + '/models/lexa_tokenizer.pickle', 2, path=BASE_PATH + '/models/lexa.keras')
     
     txt_files = glob.glob(os.path.join('D:/Exider Company/Lexa/Lexa AI/Assistant/dataset/original/dataset_01', '*.txt'))
 
@@ -50,33 +50,33 @@ def train() -> None:
 
                 separator += length + 1
 
-        train_data = np.array(input_values)
-        train_labels = tf.keras.utils.to_categorical(np.array(valid_values), num_classes=lexa.tokenizer.get_dimension())
+        train_data = np.array(input_values[0])
+        train_labels = tf.keras.utils.to_categorical(np.array(valid_values[0]), num_classes=lexa.tokenizer.get_dimension())
 
         print('Starting model training...')
 
-        for i in range(train_data.shape[0]):
+        # for i in range(train_data.shape[0]):
 
-            print(lexa.tokenizer.get_text(train_data[i]))
-            print(lexa.tokenizer.get_text(train_labels[i]))
+        #     print(lexa.tokenizer.get_text(train_data[i]))
+        #     print(lexa.tokenizer.get_text(train_labels[i]))
 
-        print('---------------------------------------')
+        # print('---------------------------------------')
 
         # with tf.device('/GPU:0'):
 
-        #     lexa.model.fit(train_data, train_labels, batch_size=1, epochs=500)
-        #     lexa.model.save(BASE_PATH + '/models/lexa.keras')
+        lexa.model.fit(train_data.reshape((1, 50)), train_labels.reshape((1, train_labels.shape[0])), batch_size=1, epochs=500)
+        lexa.model.save(BASE_PATH + '/models/lexa.keras')
 
-        #     context = lexa.tokenizer.get_text([np.random.randint(1, 30)])
+        context = lexa.tokenizer.get_text([np.random.randint(1, 30)])
 
-        #     print(context)
+        print(context)
 
-        #     for i in range(10):
-                
-        #         generated_word = lexa(context)
-        #         print(str(i) + ' |' + context + '|')
+        for i in range(10):
+            
+            generated_word = lexa(context)
+            print(str(i) + ' |' + context + '|')
 
-        #         context += generated_word
+            context += generated_word
 
 if __name__ == '__main__':
 
