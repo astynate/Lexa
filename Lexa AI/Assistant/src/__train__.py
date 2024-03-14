@@ -1,3 +1,5 @@
+import os
+import glob
 import tensorflow as tf
 import numpy as np
 from __model__ import Lexa
@@ -9,52 +11,72 @@ FEED_FORWARD_DIMENTION = 32
 
 def train() -> None:
 
-    lexa = Lexa(50, BASE_PATH + '/models/lexa_tokenizer.pickle', 1, path=BASE_PATH + '/models/lexa.keras')
-    text = open('D:/Exider Company/Lexa/Lexa AI/Assistant/dataset/original/book_one.txt', 'rb').read().decode(encoding='utf-8')
+    print('Launching the training module...')
 
-    full_sequence = lexa.tokenizer.get_full_sequence(text)
-    sequences = [full_sequence[i:i+np.random.randint(2, 51)] for i in range(len(full_sequence)-50)]
+    with tf.device('/GPU:0'):
+        lexa = Lexa(50, BASE_PATH + '/models/lexa_tokenizer.pickle', 2, path=BASE_PATH + '/models/lexa.keras')
+    
+    txt_files = glob.glob(os.path.join('D:/Exider Company/Lexa/Lexa AI/Assistant/dataset/original/dataset_01', '*.txt'))
 
-    input_values = []
-    correct_answers = []
+    print('Loading a dataset...')
 
-    for sub_sequence in sequences:
+    for txt_file in txt_files:
 
-        correct = lexa.tokenizer.get_text([sub_sequence[-1]])
+        print('Reading a file...')
 
-        if correct != '\ufffd':
+        with open(txt_file, 'r', encoding='utf-8') as infile:
+            text = infile.read()
 
-            value = lexa.tokenizer.get_sequences(lexa.tokenizer.get_text(sub_sequence[:-1]))
-            token_probability = tf.keras.utils.to_categorical(sub_sequence[-1], num_classes=lexa.tokenizer.get_dimension())
+        sequence = lexa.tokenizer.get_full_sequence(text)
+        
+        input_values = []
+        valid_values = []
 
-            input_values.append(value)
-            correct_answers.append(token_probability)
+        separator = 0
+        tokenizer = lexa.tokenizer
 
-    print(np.array(input_values).shape)
-    print(np.array(correct_answers).shape)
-    print(np.array(input_values))
+        print('Partitioning into training samples...')
 
-    for i in input_values:
+        with tf.device('/CPU:0'):
 
-        print(i)
+            while len(sequence) > separator + 51:
 
-    # print(np.array(correct_answers))
+                length = np.random.randint(2, 50)
 
-    # for _ in range(1):
+                if lexa.tokenizer.get_text([sequence[separator + length]]) != '\ufffd':
 
-    #     lexa.model.fit(np.array(input_values), np.array(correct), batch_size=64, epochs=1)
-    #     lexa.model.save(BASE_PATH + '/models/lexa.keras')
+                    input_values.append(tokenizer.get_sequences(tokenizer.get_text(sequence[separator:separator + length])))
+                    valid_values.append(sequence[separator + length])
 
-    #     context = lexa.tokenizer.get_text([np.random.randint(1, 30)])
+                separator += length + 1
 
-    #     print(context)
+        train_data = np.array(input_values)
+        train_labels = tf.keras.utils.to_categorical(np.array(valid_values), num_classes=lexa.tokenizer.get_dimension())
 
-    #     for i in range(1):
-            
-    #         print(str(i) + ' |' + context + '|')
-    #         generated_word = lexa(context)
+        print('Starting model training...')
 
-    #         context += generated_word
+        for i in range(train_data.shape[0]):
+
+            print(lexa.tokenizer.get_text(train_data[i]))
+            print(lexa.tokenizer.get_text(train_labels[i]))
+
+        print('---------------------------------------')
+
+        # with tf.device('/GPU:0'):
+
+        #     lexa.model.fit(train_data, train_labels, batch_size=1, epochs=500)
+        #     lexa.model.save(BASE_PATH + '/models/lexa.keras')
+
+        #     context = lexa.tokenizer.get_text([np.random.randint(1, 30)])
+
+        #     print(context)
+
+        #     for i in range(10):
+                
+        #         generated_word = lexa(context)
+        #         print(str(i) + ' |' + context + '|')
+
+        #         context += generated_word
 
 if __name__ == '__main__':
 

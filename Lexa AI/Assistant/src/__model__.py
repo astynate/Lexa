@@ -37,10 +37,22 @@ class PositionEncoding(tf.keras.layers.Layer):
 
     def call(self, inputs):
         return inputs + tf.cast(self.pos_encoding[:, :tf.shape(inputs)[1], :], dtype=tf.float16)
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "position": self.position,
+            "d_model": self.d_model,
+        })
+        return config
 
 class TransformerBlock(tf.keras.layers.Layer):
-    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1, **kwargs):
+    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.0, **kwargs):
         super(TransformerBlock, self).__init__(**kwargs)
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.ff_dim = ff_dim
+        self.rate = rate
         self.att = layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
         self.ffn = tf.keras.Sequential([
             layers.Dense(ff_dim, activation="relu"), 
@@ -57,6 +69,21 @@ class TransformerBlock(tf.keras.layers.Layer):
         ffn_output = self.ffn(out1)
         return self.layernorm2(out1 + ffn_output)
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "embed_dim": self.embed_dim,
+            "num_heads": self.num_heads,
+            "ff_dim": self.ff_dim,
+            "rate": self.rate,
+        })
+        return config
+
+custom_objects = {
+    'PositionEncoding': PositionEncoding,
+    'TransformerBlock': TransformerBlock
+}
+
 class Lexa:
 
     def __init__(self, input_shape, tokenizer_path, heads, **kwargs) -> None:
@@ -68,7 +95,7 @@ class Lexa:
 
         if kwargs.get('path') is not None and os.path.exists(kwargs.get('path')):
 
-            self.model = tf.keras.models.load_model(kwargs.get('path'))
+            self.model = tf.keras.models.load_model(kwargs.get('path'), custom_objects=custom_objects)
 
         else:
 
@@ -76,6 +103,7 @@ class Lexa:
             embedding_layer = layers.Embedding(input_dim=self.tokenizer.get_dimension(), output_dim=self.embed_dim)
             x = embedding_layer(inputs)
             x = PositionEncoding(self.embed_dim, self.embed_dim)(x)
+            x = TransformerBlock(self.embed_dim, heads, self.embed_dim)(x, training=True)
             x = TransformerBlock(self.embed_dim, heads, self.embed_dim)(x, training=True)
             x = layers.GlobalAveragePooling1D()(x)
             x = layers.Dropout(0.1)(x)
